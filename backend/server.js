@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 import express from 'express';
 import { getPastResults } from './pastresults.js';
+import fs from 'fs'
 
 dotenv.config()
 

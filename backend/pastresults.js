@@ -13,7 +13,6 @@ const leagues = [
 ]
 
 const seasons = [
-    "2022-23",
     "2023-24",
     "2024-25"
 ]
@@ -51,9 +50,8 @@ async function getCurrentSeasonData(league) {
         });
         
         return {
-            name: mapping.name,
             matches: response.data.matches.map(match => ({
-                date: match.utcDate,
+                date: match.utcDate.split('T')[0],
                 team1: match.homeTeam.name,
                 team2: match.awayTeam.name,
                 score: {
@@ -99,24 +97,28 @@ export async function getPastResults() {
 }
 
 function parseMatches(data) {
-    const matches = {};
+    const matches = [];
     data.forEach(league => {
         if (!league) return;
-        
-        if (!matches[league.name]) {
-            matches[league.name] = [];
-        }
         
         league.matches.forEach(match => {
             const score = match.score?.ft 
                 ? (Array.isArray(match.score.ft) ? match.score.ft : 'SCHEDULED')
                 : 'SCHEDULED';
+            
+            const dateStr = match.date ? match.date.split('T')[0] : match.date;
+            
+            let result = null;
+            if (Array.isArray(score)) {
+                result = score[0] > score[1] ? 1 : score[0] === score[1] ? 2 : 0;
+            }
                 
-            matches[league.name].push({
-                date: match.date,
+            matches.push({
+                date: dateStr,
                 home_team: match.team1,
                 away_team: match.team2,
-                score: score
+                score: score,
+                result: result
             });
         });
     });

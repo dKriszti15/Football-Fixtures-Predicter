@@ -81,7 +81,7 @@ class FootballDataOrgAPI {
 
     return data.matches.map(match => ({
       competition: data.competition,
-      season: match.season.startDate.substring(0, 4),
+      season: match.season.startDate,
       round: match.matchday,
       date: match.utcDate,
       homeTeam: match.homeTeam.name,

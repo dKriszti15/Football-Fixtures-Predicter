@@ -11,20 +11,12 @@ prediction-service/
 ├── model_trainer.py       # Model training and feature engineering
 ├── matches.json           # Historical match data (4,339 matches)
 ├── requirements.txt       # Python dependencies
-├── start_service.py       # Service startup script
-└── README.md             # This file
+└── README.md              # This file
 ```
 
 ### Generated Files (created automatically)
 - `model.pkl` - Trained model (created on first run)
 - `__pycache__/` - Python cache files
-
-### Optional Files
-- `test_service.py` - Automated test suite
-- `example_usage.py` - Usage examples
-
-### Legacy Files (can be deleted)
-- `FootballMatchPredicter.py` - Original script (functionality now in model_trainer.py)
 
 ## Features
 
@@ -44,17 +36,10 @@ pip install flask flask-cors pandas scikit-learn requests
 
 **Windows:**
 ```bash
-python start_service.py
+python prediction_api.py
 ```
 
 **The service will start on http://localhost:5001**
-
-### 3. Test the Service
-
-Open a **new terminal window** and run:
-```bash
-python test_service.py
-```
 
 ## API Endpoints
 

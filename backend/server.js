@@ -1,6 +1,7 @@
 import dotenv from 'dotenv'
 import express from 'express';
 import { getPastResults } from './service/pastresults.js';
+import fs from 'fs';
 
 dotenv.config()
 
@@ -13,6 +14,12 @@ app.use(express.json());
 
 app.get('/', async (req, res) => {
     const allData = await getPastResults();
+
+    fs.writeFile('matches.json', JSON.stringify(allData, null, 2), 'utf8', (err) => {
+        if (err) {
+            console.error('Error writing to matches.json:', err);
+        }
+    });
     
     return res.json(allData);
 });

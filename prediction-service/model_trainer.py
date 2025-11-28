@@ -2,9 +2,14 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import json
+import os
 
 
-def load_match_data(filepath='matches.json'):
+def load_match_data(filepath=None):
+    if filepath is None:
+        # Default to backend/matches.json
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        filepath = os.path.join(script_dir, '..', 'backend', 'matches.json')
 
     with open(filepath, encoding='utf-8') as inputfile:
         matches = json.load(inputfile)
@@ -163,7 +168,7 @@ def train_model(train_df, predictors, n_estimators=50, min_samples_split=10, ran
 
 def main():
     
-    df = load_match_data('matches.json')
+    df = load_match_data()
     print(f"Loaded {len(df)} matches")
 
     features_df = engineer_features(df, min_history=10)

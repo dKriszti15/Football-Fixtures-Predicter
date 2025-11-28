@@ -3,3 +3,5 @@ node_modules/
 package-lock.json
 *.json
 test_service.py
+__pycache__
+model.pkl

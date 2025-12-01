@@ -52,6 +52,16 @@ function startPredictionService() {
 async function waitForPredictionService(maxAttempts = 30, interval = 1000) {
     for (let i = 0; i < maxAttempts; i++) {
         try {
+
+            const allData = await getPastResults();
+
+            fs.writeFile('matches.json', JSON.stringify(allData, null, 2), 'utf8', (err) => {
+                if (err) {
+                    console.error('Error writing to matches.json:', err);
+                }
+            });
+
+
             await axios.get(`${PREDICTION_SERVICE_URL}/health`, { timeout: 500 });
             console.log('Prediction service is ready!');
             return true;
@@ -202,6 +212,7 @@ startPredictionService();
 
 waitForPredictionService().then(() => {
     app.listen(port, hostname, () => {
+
         console.log(`Server running at http://${hostname}:${port}/`);
     });
 });

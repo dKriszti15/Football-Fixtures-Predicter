@@ -1,5 +1,6 @@
 import dotenv from 'dotenv'
 import express from 'express';
+import cors from 'cors';
 import { getPastResults } from './service/pastresults.js';
 import fs from 'fs';
 import axios from 'axios';
@@ -14,7 +15,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config()
 
 const hostname = process.env.SERVER_HOST || '127.0.0.1';
-const port = process.env.SERVER_PORT || 3000;
+const port = process.env.SERVER_PORT || 4000;
 const PREDICTION_SERVICE_URL = process.env.PREDICTION_SERVICE_URL || 'http://localhost:5001';
 
 let predictionServiceProcess = null;
@@ -93,19 +94,8 @@ process.on('SIGTERM', () => {
 
 const app = express();
 
+app.use(cors());
 app.use(express.json());
-
-app.get('/', async (req, res) => {
-    const allData = await getPastResults();
-
-    fs.writeFile('matches.json', JSON.stringify(allData, null, 2), 'utf8', (err) => {
-        if (err) {
-            console.error('Error writing to matches.json:', err);
-        }
-    });
-    
-    return res.json(allData);
-});
 
 app.post('/api/predict', async (req, res) => {
     try {

@@ -87,7 +87,7 @@ class FootballDataOrgAPI {
     const dateFrom = today.toISOString().split('T')[0];
     
     const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 7);
+    nextWeek.setDate(today.getDate() + 2);
     nextWeek.setHours(23, 59, 59, 999);
     const dateTo = nextWeek.toISOString().split('T')[0];
 

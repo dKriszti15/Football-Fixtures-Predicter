@@ -122,7 +122,7 @@ app.post('/api/predict', async (req, res) => {
 
 app.post('/api/batch-predict', async (req, res) => {
     try {
-        const { matches, window } = req.body;
+        const { matches } = req.body;
         
         if (!matches || !Array.isArray(matches)) {
             return res.status(400).json({ error: 'matches array is required' });
@@ -130,7 +130,7 @@ app.post('/api/batch-predict', async (req, res) => {
 
         const response = await axios.post(`${PREDICTION_SERVICE_URL}/api/batch-predict`, {
             matches,
-            window: window || 10
+            window: 10
         });
 
         return res.json(response.data);

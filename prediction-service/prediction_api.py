@@ -296,9 +296,7 @@ def get_team_form(team_name):
                 'goals_conceded_avg': float(goals_conceded),
                 'goal_difference': float(goal_diff),
                 'matches_played': matches_played,
-                'window': window
-            },
-            'timestamp': datetime.now().isoformat()
+            }
         })
 
     except Exception as e:

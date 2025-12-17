@@ -45,19 +45,44 @@ export function startPredictionService() {
     });
 }
 
+async function fetchAndCacheMatches() {
+    const today = new Date().toISOString().split('T')[0];
+    const matchFile = 'matches.json';
+    const cacheFile = 'cache.json';
+    
+    try {
+        // check if cache exists from today
+        if (fs.existsSync(cacheFile)) {
+            const metadata = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+            if (metadata.lastFetchDate === today) {
+                console.log('Using cached matches data from today');
+                return;
+            }
+        }
+    } catch (error) {
+        console.log('No valid cache found, fetching new data...');
+    }
+    
+    console.log('Fetching match results...');
+    const allData = await getPastResults();
+    
+    fs.writeFileSync(matchFile, JSON.stringify(allData, null, 2), 'utf8');
+    
+    fs.writeFileSync(cacheFile, JSON.stringify({
+        lastFetchDate: today,
+        totalMatches: allData.length,
+        lastUpdated: new Date().toISOString()
+    }, null, 2), 'utf8');
+    
+    console.log(`Fetched and cached ${allData.length} matches`);
+}
+
 export async function waitForPredictionService(maxAttempts = 30, interval = 1000) {
+
+    await fetchAndCacheMatches();
+    
     for (let i = 0; i < maxAttempts; i++) {
         try {
-
-            const allData = await getPastResults();
-
-            fs.writeFile('matches.json', JSON.stringify(allData, null, 2), 'utf8', (err) => {
-                if (err) {
-                    console.error('Error writing to matches.json:', err);
-                }
-            });
-
-
             await axios.get(`${PREDICTION_SERVICE_URL}/health`, { timeout: 500 });
             console.log('Prediction service is ready!');
             return true;

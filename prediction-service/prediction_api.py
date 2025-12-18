@@ -3,7 +3,10 @@ from flask_cors import CORS
 import pandas as pd
 import pickle
 import os
-from datetime import datetime
+import json
+import threading
+import time
+from datetime import datetime, timedelta
 from model_trainer import (
     load_match_data,
     calculate_ppg,
@@ -31,11 +34,54 @@ predictors = [
 ]
 
 
-def load_model():
+RETRAIN_INTERVAL_DAYS = 2
+TRAIN_DATA_FILE = 'model_training_data.json'
 
+def should_retrain_model():
+    """Check if model needs retraining"""
+    if not os.path.exists(TRAIN_DATA_FILE):
+        return True
+    
+    try:
+        with open(TRAIN_DATA_FILE, 'r') as f:
+            metadata = json.load(f)
+            last_trained = datetime.fromisoformat(metadata['last_trained'])
+            days_since_training = (datetime.now() - last_trained).days
+            
+            return days_since_training >= RETRAIN_INTERVAL_DAYS
+    except Exception as e:
+        print(f"Error reading metadata: {e}")
+        return True
+
+def train_and_save_model():
+    """Train model and save info"""
+    global model, df, team_to_code
+    
+    print("Training new model...")
+    model, df, team_to_code = train_main()
+    
+    with open('model.pkl', 'wb') as f:
+        pickle.dump({
+            'model': model,
+            'df': df,
+            'team_to_code': team_to_code
+        }, f)
+    
+    with open(TRAIN_DATA_FILE, 'w') as f:
+        json.dump({
+            'last_trained': datetime.now().isoformat(),
+            'total_teams': len(team_to_code),
+            'total_matches': len(df),
+            'next_retrain': (datetime.now() + timedelta(days=RETRAIN_INTERVAL_DAYS)).isoformat()
+        }, f, indent=2)
+    
+    print(f"Model trained and saved. Next retrain in {RETRAIN_INTERVAL_DAYS} days.")
+
+def load_model():
+    """Load model / train"""
     global model, df, team_to_code
 
-    if os.path.exists('model.pkl'):
+    if os.path.exists('model.pkl') and not should_retrain_model():
         print("Loading saved model...")
         with open('model.pkl', 'rb') as f:
             data = pickle.load(f)
@@ -44,17 +90,23 @@ def load_model():
             team_to_code = data['team_to_code']
         print(f"Model loaded. {len(team_to_code)} teams available.")
     else:
-        print("No saved model found. Training new model...")
-        model, df, team_to_code = train_main()
+        if os.path.exists('model.pkl'):
+            print(f"Model is older than {RETRAIN_INTERVAL_DAYS} days. Retraining...")
+        else:
+            print("No saved model found. Training new model...")
+        train_and_save_model()
 
-        # save the model so training 1 time is enough
-        with open('model.pkl', 'wb') as f:
-            pickle.dump({
-                'model': model,
-                'df': df,
-                'team_to_code': team_to_code
-            }, f)
-        print("Model trained and saved.")
+def check_and_retrain():
+    """Background task to check if retraining is needed"""
+    while True:
+        time.sleep(3600)
+        
+        if should_retrain_model():
+            print("Automatic retraining triggered...")
+            try:
+                train_and_save_model()
+            except Exception as e:
+                print(f"Error during automatic retraining: {e}")
 
 
 def predict_fixture(home_team, away_team, window=10):
@@ -62,7 +114,6 @@ def predict_fixture(home_team, away_team, window=10):
         Args:
             home_team: Name of home team
             away_team: Name of away team
-            window: N matches to consider for form (default 10)
 
         Returns:
             Dictionary with prediction, probabilities, and form stats
@@ -153,8 +204,7 @@ def predict():
         Request body:
         {
             "home_team": "Team Name",
-            "away_team": "Team Name",
-            "window": 10  // optional, default 10
+            "away_team": "Team Name"
         }
     """
     try:
@@ -252,10 +302,10 @@ def batch_predict():
 
 @app.route('/api/retrain', methods=['POST'])
 def retrain():
-
+    """Manually trigger model retraining"""
     try:
-        print("Retraining model...")
-        load_model()
+        print("Manual retraining triggered...")
+        train_and_save_model()
         return jsonify({
             'status': 'success',
             'message': 'Model retrained successfully',
@@ -305,6 +355,11 @@ def get_team_form(team_name):
 
 
 load_model()
+
+# Start background retraining checker
+retraining_thread = threading.Thread(target=check_and_retrain, daemon=True)
+retraining_thread.start()
+print(f"Background retraining checker started. Model will retrain every {RETRAIN_INTERVAL_DAYS} days.")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
